@@ -1,0 +1,1 @@
+testserver ansible_host=185.189.14.236 ansible_port=3431 ansible_ssh_user=root ansible_ssh_private_key_file=~/.ssh/russia_fb_ed25519

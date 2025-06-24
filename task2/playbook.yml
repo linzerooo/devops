@@ -1,0 +1,59 @@
+---
+- name: DevOps HW2
+  hosts: all
+  become: true
+
+  vars:
+    username: devstudent
+    ssh_pubkey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO3Mb4urcZIw5qAOIL+f/Uds9kYVMUnA8R3RFIRIJ4kc root@ubuntu24"
+    workdir: "/opt/devstudent_dir"
+
+  tasks:
+    - name: Создать пользователя
+      ansible.builtin.user:
+        name: "{{ username }}"
+        state: present
+        shell: /bin/bash
+
+    - name: Добавить пользователя в группу sudo
+      ansible.builtin.user:
+        name: "{{ username }}"
+        groups: sudo
+        append: true
+
+    - name: Создать .ssh директорию
+      ansible.builtin.file:
+        path: "/home/{{ username }}/.ssh"
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: '0700'
+
+    - name: Установить SSH ключ для пользователя
+      ansible.builtin.authorized_key:
+        user: "{{ username }}"
+        state: present
+        key: "{{ ssh_pubkey }}"
+
+    - name: Отключить авторизацию по паролю в sshd_config
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?\s*PasswordAuthentication\s+'
+        line: 'PasswordAuthentication no'
+        state: present
+        validate: 'sshd -t -f %s'
+      notify: Перезапустить sshd
+
+    - name: Создать рабочую директорию в /opt с правами 660
+      ansible.builtin.file:
+        path: "{{ workdir }}"
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: '0660'
+
+  handlers:
+    - name: Перезапустить sshd
+      ansible.builtin.service:
+        name: ssh
+        state: restarted

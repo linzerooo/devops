@@ -5,3 +5,4 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+TAG=$1 docker-compose build
